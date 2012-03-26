@@ -74,13 +74,19 @@ abstract class Breadcrumb extends Frontend
 			if(!count($arrListingModules))
 				$arrListingModules = array(0);
 																								
+			$strClause = $objReferrer->layout ? " id=".$objReferrer->layout : " fallback='1'";
+			
 			//First check the referrer's page layout to see if it may contain a listing module
-			$objLayout = $this->Database->prepare("SELECT modules FROM tl_layout WHERE id=?")
+			$objLayout = $this->Database->prepare("SELECT modules FROM tl_layout WHERE$strClause")
 												->limit(1)
-												->execute($objReferrer-layout);
-												
-			$arrModules = deserialize($objLayout->modules);
-			$arrIntersect = array_intersect($arrModules, $arrListingModules);
+												->execute();
+	
+			$arrModules = deserialize($objLayout->modules,true);
+						
+			$arrIntersect = count($arrModules) ? array_intersect($arrModules, $arrListingModules) : $arrListingModules;
+			
+			if(!count($arrIntersect))
+				$arrIntersect = $arrListingModules;
 
 			//Now check for pages that contain that module as a content element
 			$arrPages = $this->Database->execute("SELECT p.id FROM tl_content c LEFT JOIN tl_article a ON a.id=c.pid LEFT JOIN tl_page p ON a.pid=p.id WHERE c.type='module' AND c.module IN(".implode(',', $arrListingModules).")")->fetchEach('id');
